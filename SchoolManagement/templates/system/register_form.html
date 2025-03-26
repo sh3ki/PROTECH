@@ -1,0 +1,188 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="{% static 'css/regstyles.css' %}">
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header">
+        <img src="{% static 'images/logo white.png' %}" alt="Logo" class="logo">
+        <h1>ATTENDANCE MONITORING SYSTEM</h1>
+        <a class="admin-btn" href="/">Home</a>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="register-container">
+            <div class="register-box">
+                <h2>Register Account</h2>
+                <form method="POST" action="{% url 'register-form' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.GET.next }}">
+                    <div class="form-container">
+                        <!-- Left Column -->
+                        <div class="left-column">
+                            <div class="form-group">
+                                <label for="profile_picture">Profile Picture</label>                                
+                            </div>
+                            <div class="profile-image-preview">
+                                <img id="image_preview" src="{% static 'images/user-default.png' %}" alt="Profile Image Preview" style="width: 100px; height: 100px;">
+                            </div>
+                            <input type="file" id="profile_picture" name="profile_pic" style="display: none;" onchange="previewImage(event)">
+                            <div class="upload-button">
+                                <button type="button" class="btn-primary" onclick="document.getElementById('profile_picture').click()">Upload</button>
+                            </div>
+                            <div class="form-group">
+                                <label for="username">Username</label>
+                                <input type="text" id="username" name="username" class="input-field" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" name="email" class="input-field" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input type="password" id="password" name="password" class="input-field" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="confirm_password">Confirm Password</label>
+                                <input type="password" id="confirm_password" name="confirm_password" class="input-field" required>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column -->
+                        <div class="right-column">
+                            <div class="form-group">
+                                <label for="firstname">First Name</label>
+                                <input type="text" id="firstname" name="first_name" class="input-field" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="middlename">Middle Name</label>
+                                <input type="text" id="middlename" name="middle_name" class="input-field">
+                            </div>
+                            <div class="form-group">
+                                <label for="lastname">Last Name</label>
+                                <input type="text" id="lastname" name="last_name" class="input-field" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="role">Role</label>
+                                <select name="role" id="role" class="role" onchange="toggleSectionField()">
+                                    <option value="principal">Principal</option>
+                                    <option value="teacher">Teacher</option>
+                                    <option value="guard">Guard</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="school">School</label>
+                                <select id="school" name="school" class="school">
+                                    {% for school in schools %}
+                                        <option value="{{ school.name }}">{{ school.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group" id="section-field" style="display:none;">
+                                <label for="section">Section</label>
+                                <select name="section" id="section" class="section-field">
+                                    {% for section in sections %}
+                                        <option value="{{ section.id }}">{{ section.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <script>
+                                    function toggleSectionField() {
+                                        var role = document.getElementById('role').value;
+                                        var sectionField = document.getElementById('sectionField');
+                                        sectionField.style.display = (role === 'teacher') ? 'block' : 'none';
+                                    }
+                                
+                                    // Call the function initially to ensure proper state when the page loads
+                                    toggleSectionField();
+                                </script>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">Register</button>
+                </form>
+                <script>
+                    function toggleSectionField() {
+                        var role = document.getElementById('role').value;
+                        var sectionField = document.getElementById('section-field');
+                        sectionField.style.display = (role === 'teacher') ? 'block' : 'none';
+                    }
+                    </script>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2024 Attendance Monitoring System</p>
+    </footer>
+
+    <script>
+        // Function to toggle section dropdown visibility when role is 'teacher'
+        function toggleSectionField() {
+            var role = document.getElementById('role').value;
+            var sectionField = document.getElementById('section-field');
+            sectionField.style.display = role === 'teacher' ? 'block' : 'none';
+        }
+
+        function previewImage(event) {
+        var reader = new FileReader();
+        reader.onload = function () {
+            var output = document.getElementById('image_preview');
+            output.src = reader.result;
+        }
+        reader.readAsDataURL(event.target.files[0]);
+        }
+
+        // Function to display profile picture (either from upload or capture)
+        function displayProfilePic(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('image_preview').src = e.target.result;
+                document.getElementById('image_preview').style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        }
+
+        // Function to capture image from webcam
+        function captureImage() {
+            const video = document.createElement('video');
+            const constraints = { video: true };
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 200;
+                    canvas.height = 200;
+                    const context = canvas.getContext('2d');
+                    document.body.appendChild(video);
+
+                    const captureButton = document.createElement('button');
+                    captureButton.innerText = 'Capture';
+                    captureButton.style.padding = '10px';
+                    captureButton.style.fontSize = '16px';
+                    captureButton.style.cursor = 'pointer';
+                    captureButton.addEventListener('click', function() {
+                        context.drawImage(video, 0, 0, 200, 200);
+                        const imgData = canvas.toDataURL('image/png');
+                        document.getElementById('image_preview').src = imgData;
+                        document.getElementById('image_preview').style.display = 'block';
+                        stream.getTracks().forEach(track => track.stop());
+                        video.remove();
+                    });
+                    document.body.appendChild(captureButton);
+                })
+                .catch(function(error) {
+                    alert("Error accessing webcam: " + error);
+                });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,360 @@
+/* Global Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.header, .footer-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 30px;
+    background-color: #0e0e0e;
+    color: #f1f1f1;
+}
+
+.footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #0e0e0e;
+    color: #f1f1f1;
+}
+
+.header, .footer {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.logo {
+    height: 60px;
+    width: auto;
+}
+
+.admin-btn, .admin-options {
+    text-decoration: none;
+    background-color: #f1f1f1;
+    border: none;
+    color: #0e0e0e;
+    font-size: medium;
+    font-weight: bold;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.admin-options {
+    background-color: #dadada;
+}
+
+.admin-btn:hover, .admin-options:hover {
+    background-color: #cacaca;
+}
+
+.admin-options:hover {
+    background-color: #aaaaaa;
+}
+
+.main {
+    display: flex;
+    flex: 1;
+    padding: 10px;
+    gap: 30px;
+}
+
+.camera-feed {
+    flex: 6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ebebeb;
+    border-radius: 10px;
+    height: 70vh;
+}
+
+.feed-box {
+    width: 95%;
+    height: 90%;
+    background-color: #cacaca;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    position: relative;  
+    overflow: hidden;
+}
+
+.webcam_feed {
+    width: 100%;      
+    height: auto;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.attendance-output {
+    flex: 3;
+    background-color: #ebebeb;
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    height: 68vh;
+    overflow-y: auto;
+}
+
+.attendance-box {
+    background-color: #cacaca;
+    padding: 30px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.datetime p {
+    font-size: 18px;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.switch, .toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+input[type="radio"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4); /* Black with opacity */
+}
+
+.modal-content {
+    background-color: #ffffff;
+    margin: 15% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 30%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+}
+
+.button-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.close {
+    color: #999999;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #000000;
+}
+
+.main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    padding: 20px;
+}
+
+/* Login Page Styles */
+.login-container {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center; 
+}
+
+.login-box {
+    background-color: #ffffff;
+    padding: 20px 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.login-box h2 {
+    margin-top: 0;
+    color: #0e0e0e;
+    margin-bottom: 50px; 
+}
+
+.login-box form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+}
+
+.login-box label {
+    font-size: 16px;
+    font-weight: bold;
+    text-align: left;
+}
+
+.login-box input[type="text"], 
+.login-box input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cacaca;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.login-box button {
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+    background-color: #0e0e0e;
+    color: #f1f1f1;
+    border: none;
+}
+
+.login-box button:hover {
+    background-color: #444444;
+}
+
+/* Password Container */
+.password-container {
+    position: relative;
+    width: 100%;
+}
+
+.password-container input {
+    width: 100%;
+    padding: 10px;
+    padding-right: 40px;
+    border: 1px solid #cacaca;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.password-container .toggle-password {
+    position: absolute;
+    right: 0px; 
+    top: 0px;     
+    padding-bottom: 0px;
+    transform: translateY(-5%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 1;   
+}
+
+.password-container .toggle-password img {
+    width: 25px;
+    height: 25px;
+}
+
+.password-container button:hover {
+    background: none;
+    border: none;
+}
+
+.password-container button img:hover {
+    cursor: pointer;
+}
+
+.register-link {    
+    font-size: 90%;
+    margin-top: 10px;
+    text-align: center;
+    margin-top: 30px;
+}
+
+.register-btn {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.register-btn:hover {
+    text-decoration: underline;
+}
+
+/* Profile Picture Container */
+.profile-picture-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.profile-picture-container input[type="file"] {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #cacaca;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.profile-picture-container button {
+    padding: 5px 10px;
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    background-color: #0e0e0e;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.profile-picture-container button:hover {
+    background-color: #444444;
+}
+
+/* Dropdown Style */
+select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cacaca;
+    border-radius: 5px;
+    font-size: 16px;
+    background-color: #ffffff;
+    color: #000000;
+    cursor: pointer;
+}
+
+select:focus {
+    outline: none;
+    border-color: #0e0e0e;
+}

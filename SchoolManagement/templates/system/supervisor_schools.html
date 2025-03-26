@@ -1,0 +1,220 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supervisor - Manage Schools</title>
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo-container">
+        <img src="{% static 'images/logo white.png' %}" alt="Logo" class="logo">
+      </div>
+      <nav class="nav">
+        <ul>
+          <li>
+            <a href="/supervisor-dashboard">
+              <i class="icon-home"></i> HOME
+            </a>
+          </li>
+          <li class="active">
+            <a href="/supervisor-schools">
+              <i class="icon-schools"></i> SCHOOLS
+            </a>
+          </li>
+          <li>
+            <a href="/supervisor-admins">
+              <i class="icon-admins"></i> ADMINS
+            </a>
+          </li>
+          <li>
+            <a href="/supervisor-teachers">
+              <i class="icon-teachers"></i> TEACHERS
+            </a>
+          </li>
+          <li>
+            <a href="/supervisor-students">
+              <i class="icon-students"></i> STUDENTS
+            </a>
+          </li>
+          <li>
+            <a href="/supervisor-attendance">
+              <i class="icon-attendance"></i> ATTENDANCE
+            </a>
+          </li>
+          <li>
+            <a href="/supervisor-settings">
+              <i class="icon-settings"></i> SETTINGS
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+      <header class="top-bar">
+        <h1>ATTENDANCE MONITORING SYSTEM</h1>
+        <div class="user-section">
+          <img src="{% static 'images/user-default.png' %}" alt="Profile" class="profile-pic">
+          <button class="logout-btn" type="button" onclick="window.location.href='{% url '/' %}'">Logout</button>
+        </div>
+      </header>
+
+      <section class="manage-section">
+        <div class="header">
+          <h2>Manage Schools</h2>
+          <div class="search-container">
+            <input type="text" class="search-bar" placeholder="Search">
+            <button class="filter-btn">
+              <i class="icon-filter"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>School Name</th>
+                <th>School Id</th>
+                <th>School Address</th>
+                <th>School Head</th>
+                <th>Total Students</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for num, school in schools %}
+                <tr>
+                  <td>{{ num }}</td>
+                  <td>{{ school.name }}</td>
+                  <td>{{ school.id }}</td>
+                  <td>{{ school.address }}</td>
+                  <td>{{ school.head }}</td>
+                  <td>{{ school.total_students }}</td>
+                  <td>
+                    <button class="edit-btn" onclick="openEditModal('{{ school.id }}', '{{ school.name }}', '{{ school.address }}', '{{ school.head }}', '{{ school.total_students }}')">Edit</button>
+                    <form method="POST" action="{% url 'delete-school' school.id %}" style="display: inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="delete-btn">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+            </tbody>                           
+          </table>
+        </div>
+
+        <!-- Blue Add button -->
+        <button class="add-btn" onclick="openAddModal()">Add</button>
+      </section>
+
+<!-- Add/Edit School Modal -->
+<div id="school-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h3 id="modal-title">Add School</h3>
+        <form id="school-form" method="POST" action="{% url 'add-school' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="school-id">School ID</label>
+                <input type="text" id="school-id" name="school_id" required>
+            </div>
+            <div class="form-group">
+                <label for="school-name">School Name</label>
+                <input type="text" id="school-name" name="school_name" required>
+            </div>
+            <div class="form-group">
+                <label for="school-address">School Address</label>
+                <input type="text" id="school-address" name="school_address" required>
+            </div>
+            <div class="form-group">
+                <label for="school-head">School Head</label>
+                <input type="text" id="school-head" name="school_head" required>
+            </div>
+            <div class="form-group">
+                <label for="total-students">Total Students</label>
+                <input type="number" id="total-students" name="total_students" required>
+            </div>
+            <button type="submit" class="save-btn">Save</button>
+        </form>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmation-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeConfirmation()">&times;</span>
+        <h3>School Added Successfully!</h3>
+    </div>
+</div>
+
+      <footer class="footer">
+        <div class="copy">
+          <p>© 2024 Attendance Monitoring System. All Rights Reserved.</p>
+        </div>
+        <div class="date-time">
+          <p id="current-date-time"></p>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    // Open the Add School Modal
+    function openAddModal() {
+      document.getElementById('modal-title').textContent = 'Add School';
+      document.getElementById('school-form').action = '{% url "add-school" %}';
+      document.getElementById('school-id').value = '';
+      document.getElementById('school-name').value = '';
+      document.getElementById('school-address').value = '';
+      document.getElementById('school-head').value = '';
+      document.getElementById('total-students').value = '';
+      document.getElementById('school-modal').style.display = 'block';
+    }
+
+    // Open the Edit School Modal
+    function openEditModal(id, name, address, head, total_students) {
+      document.getElementById('modal-title').textContent = 'Edit School';
+      document.getElementById('school-form').action = `/edit-school/${id}/`;
+      document.getElementById('school-id').value = id;
+      document.getElementById('school-name').value = name;
+      document.getElementById('school-address').value = address;
+      document.getElementById('school-head').value = head;
+      document.getElementById('total-students').value = total_students;
+      document.getElementById('school-modal').style.display = 'block';
+    }
+
+    // Close the School Modal
+    function closeModal() {
+      document.getElementById('school-modal').style.display = 'none';
+    }
+
+    // Close the Confirmation Modal
+    function closeConfirmation() {
+      document.getElementById('confirmation-modal').style.display = 'none';
+    }
+
+    // Handle the School Form Submission
+    document.getElementById('school-form').addEventListener('submit', function(event) {
+        closeModal();
+      // Show the Confirmation Modal after form submission
+      document.getElementById('confirmation-modal').style.display = 'block';
+      // Optionally, you can use setTimeout to close the confirmation modal after a few seconds
+      setTimeout(function() {
+        closeConfirmation();
+      }, 5000);
+    });
+  </script>
+
+  <script src="{% static 'js/dashboard.js' %}"></script>
+
+  
+</body>
+</html>

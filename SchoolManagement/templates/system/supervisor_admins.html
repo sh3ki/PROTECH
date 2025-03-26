@@ -1,0 +1,231 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supervisor - Manage Admins</title>
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo-container">
+        <img src="{% static 'images/logo white.png' %}" alt="Logo" class="logo">
+      </div>
+      <nav class="nav">
+        <ul>
+          <li>
+            <a href="/supervisor-dashboard">
+              <i class="icon-home"></i> HOME
+            </a>
+          </li>
+          <li>
+            <a href="/supervisor-schools">
+              <i class="icon-schools"></i> SCHOOLS
+            </a>
+          </li>
+          <li class="active">
+            <a href="/supervisor-admins">
+              <i class="icon-admins"></i> ADMINS
+            </a>
+          </li>
+          <li>
+            <a href="/supervisor-teachers">
+              <i class="icon-teachers"></i> TEACHERS
+            </a>
+          </li>
+          <li>
+            <a href="/supervisor-students">
+              <i class="icon-students"></i> STUDENTS
+            </a>
+          </li>
+          <li>
+            <a href="/supervisor-attendance">
+              <i class="icon-attendance"></i> ATTENDANCE
+            </a>
+          </li>
+          <li>
+            <a href="/supervisor-settings">
+              <i class="icon-settings"></i> SETTINGS
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+      <header class="top-bar">
+        <h1>ATTENDANCE MONITORING SYSTEM</h1>
+        <div class="user-section">
+          <img src="{% static 'images/user-default.png' %}" alt="Profile" class="profile-pic">
+          <button class="logout-btn" type="button" onclick="window.location.href='{% url '/' %}'">Logout</button>
+        </div>
+      </header>
+
+      <section class="manage-section">
+        <div class="header">
+          <h2>Manage Admins</h2>
+          <div class="search-container">
+            <input type="text" class="search-bar" placeholder="Search">
+            <button class="filter-btn">
+              <i class="icon-filter"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Admin Name</th>
+                <th>School</th>
+                <th>Role</th>
+                <th>Email</th>
+                <th>Username</th>
+                <th>Password</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for admin in admins %}
+              <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>{{ admin.first_name }} {{ admin.middle_name }} {{ admin.last_name }}</td>
+                  <td>{{ admin.school.name }}</td>
+                  <td>
+                      {% if admin.is_principal %}
+                          Principal
+                      {% elif admin.is_guard %}
+                          Guard
+                      {% else %}
+                          N/A
+                      {% endif %}
+                  </td>
+                  <td>{{ admin.email }}</td>
+                  <td>{{ admin.username }}</td>
+                  <td>********</td> <!-- Password hidden for security -->
+                  <td>
+                      <button class="edit-btn">Edit</button>
+                      <button class="delete-btn">Delete</button>
+                  </td>
+              </tr>
+              {% empty %}
+              <tr>
+                  <td colspan="8">No admins found.</td>
+              </tr>
+              {% endfor %}
+          </tbody>
+          </table>
+        </div>
+
+        <!-- Blue Add button -->
+        <button class="add-btn" onclick="openModal()">Add</button>
+      </section>
+
+      <!-- Add Admin Modal -->
+      <div id="add-admin-modal" class="modal">
+        <div class="modal-content">
+          <span class="close-btn" onclick="closeModal()">&times;</span>
+          <h3>Add Admin</h3>
+          <form id="add-admin-form" method="POST" action="{% url 'add-admin' %}">
+            {% csrf_token %}
+            <div class="form-group">
+              <label for="admin-first-name">First Name</label>
+              <input type="text" id="admin-first-name" name="first_name" required>
+            </div>
+            <div class="form-group">
+              <label for="admin-middle-name">Middle Name</label>
+              <input type="text" id="admin-middle-name" name="middle_name">
+            </div>
+            <div class="form-group">
+              <label for="admin-last-name">Last Name</label>
+              <input type="text" id="admin-last-name" name="last_name" required>
+            </div>
+            <div class="form-group">
+              <label for="school">School:</label>
+              <select id="school" name="school" required>
+                  <option value="">Select a School</option>
+                  {% for school in schools %}
+                    <option value="{{ school.id }}">{{ school.name }}</option>
+                  {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="admin-role">Role</label>
+              <select id="admin-role" name="role" required>
+                <option value="principal">Principal</option>
+                <option value="guard">Guard</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="admin-email">Email</label>
+              <input type="email" id="admin-email" name="email" required>
+            </div>
+            <div class="form-group">
+              <label for="admin-username">Username</label>
+              <input type="text" id="admin-username" name="username" required>
+            </div>
+            <div class="form-group">
+              <label for="admin-password">Password</label>
+              <input type="password" id="admin-password" name="password" required>
+            </div>
+            <button type="submit" class="save-btn">Save</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Confirmation Modal -->
+      <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+          <span class="close-btn" onclick="closeConfirmation()">&times;</span>
+          <h3>Admin Added Successfully!</h3>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <div class="copy">
+          <p>© 2024 Attendance Monitoring System. All Rights Reserved.</p>
+        </div>
+        <div class="date-time">
+          <p id="current-date-time"></p>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    // Open the Add Admin Modal
+    function openModal() {
+      document.getElementById('add-admin-modal').style.display = 'block';
+    }
+
+    // Close the Add Admin Modal
+    function closeModal() {
+      document.getElementById('add-admin-modal').style.display = 'none';
+    }
+
+    // Close the Confirmation Modal
+    function closeConfirmation() {
+      document.getElementById('confirmation-modal').style.display = 'none';
+    }
+
+    // Handle the Add Admin Form Submission
+    document.getElementById('add-admin-form').addEventListener('submit', function(event) {
+      closeModal();
+      // Show the Confirmation Modal after form submission
+      document.getElementById('confirmation-modal').style.display = 'block';
+      // Optionally, you can use setTimeout to close the confirmation modal after a few seconds
+      setTimeout(function() {
+        closeConfirmation();
+      }, 5000);
+    });
+  </script>
+
+  <script src="{% static 'js/dashboard.js' %}"></script>
+
+</body>
+</html>

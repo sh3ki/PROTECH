@@ -1,0 +1,256 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Manage Teachers</title>
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo-container">
+        <img src="{% static 'images/logo white.png' %}" alt="Logo" class="logo">
+      </div>
+      <nav class="nav">
+        <ul>
+          <li>
+            <a href="/admin-dashboard">
+              <i class="icon-home"></i> HOME
+            </a>
+          </li>
+          <li class="active">
+            <a href="/admin-teachers">
+              <i class="icon-teachers"></i> TEACHERS
+            </a>
+          </li>
+          <li>
+            <a href="/admin-students">
+              <i class="icon-students"></i> STUDENTS
+            </a>
+          </li>
+          <li>
+            <a href="/admin-attendance">
+              <i class="icon-attendance"></i> ATTENDANCE
+            </a>
+          </li>
+          <li>
+            <a href="/admin-settings">
+              <i class="icon-settings"></i> SETTINGS
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+      <header class="top-bar">
+        <h1>ATTENDANCE MONITORING SYSTEM</h1>
+        <div class="user-section">
+          <img src="{% static 'images/user-default.png' %}" alt="Profile" class="profile-pic">
+          <button class="logout-btn" type="button" onclick="window.location.href='{% url '/' %}'">Logout</button>
+        </div>
+      </header>
+
+      <section class="manage-section">
+        <div class="header">
+          <h2>Manage Teachers</h2>
+          <div class="search-container">
+            <input type="text" class="search-bar" placeholder="Search">
+            <button class="filter-btn">
+              <i class="icon-filter"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Teacher Name</th>
+                <th>School</th>
+                <th>Grade</th>
+                <th>Section</th>
+                <th>Email</th>
+                <th>Username</th>
+                <th>Password</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for teacher in teachers %}
+              <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>{{ teacher.first_name }} {{ teacher.middle_name }} {{ teacher.last_name }}</td>
+                  <td>{{ teacher.school.name }}</td>
+                  <td>{{ teacher.section.grade }}</td>
+                  <td>{{ teacher.section.name }}</td>
+                  <td>{{ teacher.email }}</td>
+                  <td>{{ teacher.username }}</td>
+                  <td>********</td> <!-- Password hidden for security -->
+                  <td>
+                      <button class="edit-btn">Edit</button>
+                      <button class="delete-btn">Delete</button>
+                  </td>
+              </tr>
+              {% empty %}
+              <tr>
+                  <td colspan="10">No teachers found.</td>
+              </tr>
+              {% endfor %}
+          </tbody>          
+          </table>
+        </div>
+
+        <!-- Blue Add button -->
+        <button class="add-btn" onclick="openModal()">Add</button>
+      </section>
+
+      <!-- Add Teacher Modal -->
+      <div id="add-teacher-modal" class="modal">
+        <div class="modal-content">
+          <span class="close-btn" onclick="closeModal()">&times;</span>
+          <h3>Add Teacher</h3>
+          <form id="add-teacher-form" method="POST" action="{% url 'add-teacher' %}">
+            {% csrf_token %}
+            <div class="form-group-row">
+              <div class="form-group">
+                <label for="last-name">Last Name</label>
+                <input type="text" id="last-name" name="last_name" required>
+              </div>
+              <div class="form-group">
+                <label for="first-name">First Name</label>
+                <input type="text" id="first-name" name="first_name" required>
+              </div>
+              <div class="form-group">
+                <label for="middle-name">Middle Name</label>
+                <input type="text" id="middle-name" name="middle_name">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="school">School</label>
+              <select id="school" name="school" onchange="updateSections()">
+                <option value="">Select a School</option>
+                {% for school in schools %}
+                <option value="{{ school.id }}">{{ school.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group-row">
+              <div class="form-group">
+                <label for="grade">Grade</label>
+                <select id="grade" name="grade" onchange="updateSections()">
+                  <option value="">Select a Grade</option>
+                  {% for grade in grades %}
+                  <option value="{{ grade }}">Grade {{ grade }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="section">Section</label>
+                <select id="section" name="section">
+                  <option value="">Select a Section</option>
+                  {% for section in sections %}
+                  <option value="{{ section.id }}" data-school="{{ section.school.id }}" data-grade="{{ section.grade }}">
+                    {{ section.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="teacher-email">Email</label>
+              <input type="email" id="teacher-email" name="email" required>
+            </div>
+            <div class="form-group">
+              <label for="teacher-username">Username</label>
+              <input type="text" id="teacher-username" name="username" required>
+            </div>
+            <div class="form-group">
+              <label for="teacher-password">Password</label>
+              <input type="password" id="teacher-password" name="password" required>
+            </div>
+            <button type="submit" class="save-btn">Save</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Confirmation Modal -->
+      <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+          <span class="close-btn" onclick="closeConfirmation()">&times;</span>
+          <h3>Teacher Added Successfully!</h3>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <div class="copy">
+          <p>© 2024 Attendance Monitoring System. All Rights Reserved.</p>
+        </div>
+        <div class="date-time">
+          <p id="current-date-time"></p>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    // Open the Add Teacher Modal
+    function openModal() {
+      document.getElementById('add-teacher-modal').style.display = 'block';
+    }
+
+    // Close the Add Teacher Modal
+    function closeModal() {
+      document.getElementById('add-teacher-modal').style.display = 'none';
+    }
+
+    // Close the Confirmation Modal
+    function closeConfirmation() {
+      document.getElementById('confirmation-modal').style.display = 'none';
+    }
+
+    // Handle the Add Teacher Form Submission
+    document.getElementById('add-teacher-form').addEventListener('submit', function(event) {
+      closeModal();
+      // Show the Confirmation Modal after form submission
+      document.getElementById('confirmation-modal').style.display = 'block';
+      // Optionally, you can use setTimeout to close the confirmation modal after a few seconds
+      setTimeout(function() {
+        closeConfirmation();
+      }, 5000);
+    });
+
+    // Update sections based on selected school and grade
+    function updateSections() {
+      const schoolId = document.getElementById('school').value;
+      const grade = document.getElementById('grade').value;
+      const sections = document.querySelectorAll('#section option');
+
+      // Reset the visibility of all sections (hide all)
+      sections.forEach(option => {
+        option.style.display = 'none';  // Hide all sections initially
+      });
+
+      // Show sections that match the selected school and grade
+      sections.forEach(option => {
+        const sectionSchoolId = option.getAttribute('data-school');
+        const sectionGrade = option.getAttribute('data-grade');
+
+        // Show section if it matches the selected school and grade
+        if ((schoolId === '' || schoolId == sectionSchoolId) &&
+            (grade === '' || grade == sectionGrade)) {
+          option.style.display = 'block';  // Show matching sections
+        }
+      });
+    }
+  </script>
+
+  <script src="{% static 'js/students.js' %}"></script>
+
+</body>
+</html>
