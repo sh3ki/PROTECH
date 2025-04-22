@@ -1,0 +1,205 @@
+/* Root Variables - Combined from styles.css and dashboard.css */
+:root {
+    --primary-color: #0e0e0e;
+    --secondary-color: #f1f1f1;
+    --tertiary-color: #dadada;
+    --light-gray: #cacaca;
+    --lighter-gray: #ebebeb;
+    --hover-gray: #444444;
+    --border-radius: 5px;
+    --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    --transition: all 0.3s ease;
+    --success-color: #15be39;
+    --success-hover: #107c16;
+    --danger-color: #ee4f44;
+    --danger-hover: #a32a2a;
+    --primary-blue: #2a90fd;
+    --primary-blue-hover: #1c63af;
+    --padding-standard: 10px;
+    --margin-standard: 10px;
+    --font-stack: Arial, sans-serif;
+}
+
+/* Global Styles */
+body {
+    font-family: var(--font-stack);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header Styles */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 30px;
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.logo {
+    height: 60px;
+    width: auto;
+}
+
+.admin-btn {
+    text-decoration: none;
+    background-color: var(--secondary-color);
+    border: none;
+    color: var(--primary-color);
+    font-size: medium;
+    font-weight: bold;
+    padding: var(--padding-standard) 15px;
+    cursor: pointer;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.admin-btn:hover {
+    background-color: var(--light-gray);
+}
+
+/* Main Content Area */
+.device-selection-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    padding: 20px 0;
+}
+
+.device-selection-container {
+    background-color: var(--lighter-gray);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    width: 90%;
+    max-width: 1200px;
+}
+
+.device-selection-container h2 {
+    color: var(--primary-color);
+    font-size: 1.8em;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Search Container */
+.search-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.search-bar {
+    padding: var(--padding-standard);
+    font-size: 14px;
+    width: 300px;
+    border: 1px solid #ccc;
+    border-radius: var(--border-radius);
+    outline: none;
+    transition: var(--transition);
+}
+
+.search-bar:focus {
+    border-color: var(--primary-color);
+}
+
+.filter-btn {
+    margin-left: 10px;
+    background-color: var(--primary-color);
+    color: #fff;
+    border: none;
+    padding: var(--padding-standard) 15px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.filter-btn:hover {
+    background-color: var(--hover-gray);
+}
+
+/* Table Styles */
+.table-container {
+    overflow-x: auto;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: var(--border-radius);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    background-color: #fafafa;
+}
+
+.data-table thead {
+    background-color: var(--primary-color);
+    color: #fff;
+    position: sticky;
+    top: 0;
+}
+
+.data-table th {
+    padding: 15px;
+    border: 1px solid #6d6d6d;
+    text-align: center;
+}
+
+.data-table tbody td {
+    padding: 10px;
+    border: 1px solid #6d6d6d;
+}
+
+.data-table tbody tr:hover {
+    background-color: #e0e0e0;
+}
+
+/* Footer Styles */
+.footer {
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    padding: 10px 20px;
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.copy {
+    font-size: 14px;
+}
+
+.date-time {
+    font-size: 14px;
+    text-align: right;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .device-selection-container {
+        padding: 15px;
+        width: 95%;
+    }
+    
+    .search-bar {
+        width: 100%;
+    }
+    
+    .header {
+        padding: 5px 10px;
+        flex-wrap: wrap;
+    }
+    
+    .header h1 {
+        font-size: 18px;
+    }
+}

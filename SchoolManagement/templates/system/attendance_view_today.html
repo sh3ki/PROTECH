@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Records</title>
+    <link rel="stylesheet" href="{% static 'css/attendance_view.css' %}">
+</head>
+<body>
+    <header class="header">
+        <img src="{% static 'images/logo white.png' %}" alt="Logo" class="logo">
+        <h1>ATTENDANCE MONITORING SYSTEM</h1>
+        <button class="admin-btn" onclick="window.location.href='{{ back_url }}';">Back</button>
+    </header>
+
+    <main class="device-selection-wrapper">
+        <div class="device-selection-container" style="max-width: 90%; padding: 20px;">
+            <h2>Attendance Records</h2>
+            
+            <div class="search-container" style="margin-bottom: 20px;">
+                <input type="text" class="search-bar" placeholder="Search" id="searchInput">
+                <button class="filter-btn">
+                    <i class="icon-filter"></i>
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Student Name</th>
+                            <th>LRN</th>
+                            <th>School</th>
+                            <th>Grade</th>
+                            <th>Section</th>
+                            <th>Date</th>
+                            <th>Time In</th>
+                            <th>Time Out</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attendance in attendances %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ attendance.student.first_name }} {{ attendance.student.last_name }}</td>
+                                <td>{{ attendance.student.lrn }}</td>
+                                <td>{{ attendance.student.section.school.name }}</td>
+                                <td>{{ attendance.student.section.grade }}</td>
+                                <td>{{ attendance.student.section.name }}</td>
+                                <td>{{ attendance.date }}</td>
+                                <td>{{ attendance.time_in }}</td>
+                                <td>{{ attendance.time_out }}</td>
+                                <td>{{ attendance.status }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="10">No attendance records found.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="copy">
+            <p>© 2024 Attendance Monitoring System. All Rights Reserved.</p>
+        </div>
+        <div class="date-time">
+            <p id="current-date-time"></p>
+        </div>
+    </footer>
+
+    <script>
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            let searchText = this.value.toLowerCase();
+            let table = document.querySelector('.data-table');
+            let rows = table.getElementsByTagName('tr');
+            
+            for (let i = 1; i < rows.length; i++) {
+                let found = false;
+                let cells = rows[i].getElementsByTagName('td');
+                
+                for (let j = 0; j < cells.length; j++) {
+                    let cellText = cells[j].textContent || cells[j].innerText;
+                    
+                    if (cellText.toLowerCase().indexOf(searchText) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (found) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        });
+        
+        // Display current date and time
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            document.getElementById('current-date-time').textContent = now.toLocaleDateString('en-US', options);
+        }
+        
+        // Update date/time initially and every second
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+    </script>
+</body>
+</html>

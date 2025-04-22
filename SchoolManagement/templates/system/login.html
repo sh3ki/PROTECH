@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Login</title>
+    <title>{{ title }} Login</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
@@ -18,8 +18,12 @@
     <!-- Main Content -->
     <main class="main login-container">
         <div class="login-box">
-            <h2>TEACHER LOGIN</h2>
-            <form action="/teacher-login" method="POST">
+            {% if title == 'SUPERVISOR' %}
+                <h2>PRINCIPAL LOGIN</h2>
+            {% else %}
+                <h2>{{ title }} LOGIN</h2>
+            {% endif %}
+            <form action="{{ form_action }}" method="POST">
                 {% csrf_token %}
                 <label for="username">Username:</label>
                 <input type="text" id="username" name="username" required>
@@ -35,9 +39,11 @@
                         {{ error_message }}
                     </div>
                 {% endif %}
-                <div class="register-link">
-                    <p>Don't have an account yet? <a href="{% url 'register-form' %}?next={% url 'teacher-login' %}" class="register-btn">Register here</a></p>
-                </div>
+                {% if show_register %}
+                    <div class="register-link">
+                        <p>Don't have an account yet? <a href="{% url 'register-form' %}?next={% url next_url %}" class="register-btn">Register here</a></p>
+                    </div>
+                {% endif %}
                 <button type="submit" class="admin-btn">Login</button>
             </form>
         </div>

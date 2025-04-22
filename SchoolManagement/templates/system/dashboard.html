@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ user_role|title }} Dashboard</title>
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+  <div class="dashboard">
+    {% with active_page='dashboard' %}
+    {% include 'components/sidebar.html' %}
+    {% endwith %}
+    
+    <!-- Main Content -->
+    <main class="content">
+      <header class="top-bar">
+        <h1>ATTENDANCE MONITORING SYSTEM</h1>
+        <div class="user-section">
+          <img src="{% static 'images/user-default.png' %}" alt="Profile" class="profile-pic">
+          <button class="logout-btn" type="button" onclick="window.location.href='{% url 'logout' %}'">Logout</button>
+        </div>
+      </header>
+
+      <section class="stats">
+        <!-- Show Schools and Admins only for supervisor -->
+        {% if user.is_superuser %}
+          <!-- <a href="/supervisor-schools" class="box">
+              <h2>SCHOOLS</h2>
+              <img src="{% static 'images/schools.png' %}" alt="Schools">
+              <p>Total: <span class="number">{{ total_schools }}</span></p>
+          </a> -->
+          <a href="/supervisor-admins" class="box">
+              <h2>ADMINS</h2>
+              <img src="{% static 'images/admins.png' %}" alt="Admins">
+              <p>Total: <span class="number">{{ total_admins }}</span></p>
+          </a>
+        {% endif %}
+        
+        <!-- Show Teachers for supervisor and admin -->
+        {% if user.is_superuser or user.is_principal or user.is_guard %}
+          <a href="/{% if user.is_superuser %}supervisor{% else %}admin{% endif %}-teachers" class="box">
+              <h2>TEACHERS</h2>
+              <img src="{% static 'images/teachers.png' %}" alt="Teachers">
+              <p>Total: <span class="number">{{ total_teachers }}</span></p>
+          </a>
+        {% endif %}
+        
+        <!-- Show Students for all roles -->
+        <a href="/{% if user.is_superuser %}supervisor{% elif user.is_principal or user.is_guard %}admin{% elif user.is_teacher %}teacher{% endif %}-students" class="box">
+            <h2>STUDENTS</h2>
+            <img src="{% static 'images/students.png' %}" alt="Students">
+            <p>Total: <span class="number">{{ total_students }}</span></p>
+        </a>
+        
+        <!-- Show Attendance for all roles -->
+        <a href="/{% if user.is_superuser %}supervisor{% elif user.is_principal or user.is_guard %}admin{% elif user.is_teacher %}teacher{% endif %}-attendance" class="box">
+            <h2>ATTENDANCE</h2>
+            <img src="{% static 'images/attendance.png' %}" alt="Attendance">
+            <p>Total: <span class="number">{{ total_attendance }}</span></p>
+        </a>
+      </section>
+
+      <footer class="footer">
+        <div class="copy">
+          <p>© 2024 Attendance Monitoring System. All Rights Reserved.</p>
+        </div>
+        <div class="date-time">
+          <p id="current-date-time"></p>
+        </div>
+      </footer>
+    </main>
+  </div>
+  <script src="{% static 'js/dashboard.js' %}"></script>
+</body>
+</html>

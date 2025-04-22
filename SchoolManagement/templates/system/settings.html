@@ -1,0 +1,94 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ user_role|title }} - Settings</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard">
+        {% with active_page='settings' %}
+        {% include 'components/sidebar.html' %}
+        {% endwith %}
+
+        <!-- Main Content -->
+        <main class="content">
+            <header class="top-bar">
+                <h1>ATTENDANCE MONITORING SYSTEM</h1>
+                <div class="user-section">
+                    <img src="{% static 'images/user-default.png' %}" alt="Profile" class="profile-pic">
+                    <button class="logout-btn" type="button" onclick="window.location.href='{% url 'logout' %}'">Logout</button>
+                </div>
+            </header>
+
+            <section class="settings-section">
+                <h2>System Settings</h2>
+                <!-- Settings content will go here -->
+                <div class="settings-container">
+                    <div class="setting-group">
+                        <h3>User Settings</h3>
+                        <div class="setting-item">
+                            <label>Change Password</label>
+                            <button class="btn">Update</button>
+                        </div>
+                        <div class="setting-item">
+                            <label>Email Notifications</label>
+                            <input type="checkbox" checked>
+                        </div>
+                    </div>
+                    
+                    {% if user.is_superuser %}
+                    <div class="setting-group">
+                        <h3>System Configuration</h3>
+                        <div class="setting-item">
+                            <label>School Year</label>
+                            <select>
+                                <option>2023-2024</option>
+                                <option>2024-2025</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>Enable Face Recognition</label>
+                            <input type="checkbox" {% if face_recognition_enabled %}checked{% endif %}>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if user.is_principal %}
+                    <div class="setting-group">
+                        <h3>School Configuration</h3>
+                        <div class="setting-item">
+                            <label>School Information</label>
+                            <button class="btn">Edit</button>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if user.is_teacher %}
+                    <div class="setting-group">
+                        <h3>Class Settings</h3>
+                        <div class="setting-item">
+                            <label>Section Information</label>
+                            <button class="btn">View</button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <footer class="footer">
+                <div class="copy">
+                    <p>© 2024 Attendance Monitoring System. All Rights Reserved.</p>
+                </div>
+                <div class="date-time">
+                    <p id="current-date-time"></p>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="{% static 'js/dashboard.js' %}"></script>
+</body>
+</html>

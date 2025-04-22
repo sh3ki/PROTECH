@@ -26,6 +26,11 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log(`Setting face-photo-preview src to /media/student_temp/${filename}`);
             document.getElementById('face-photo-preview').src = `/media/student_temp/${filename}`;
         }
+        // Also call the stop_webcam endpoint for server-side camera release
+        fetch('/stop_webcam/')
+            .then(response => response.json())
+            .then(data => console.log('Server camera released:', data))
+            .catch(error => console.error('Error releasing server camera:', error));
         resetModal();
     }
 

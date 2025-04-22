@@ -1,0 +1,238 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time In - Attendance Monitoring System</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <header class="header">
+        <img src="{% static 'images/logo white.png' %}" alt="Logo" class="logo">
+        <h1>ATTENDANCE MONITORING SYSTEM - TIME IN</h1>
+        <button class="admin-btn" onclick="window.location.href='/attendance-view-today?source=front-camera';">Attendance</button>
+        <button class="admin-btn" onclick="window.location.href='/';">Back</button>
+    </header>
+    <main class="main">
+        <div class="camera-feed">
+            <div class="feed-box">
+                <img src="{% url 'webcam_feed' %}?camera=0&mode=time-in" alt="Webcam Feed" class="webcam_feed"> 
+            </div>
+        </div>
+        <div class="attendance-output">
+            <div id="attendance-container">
+                <div class="attendance-box">No attendance marked yet.</div>
+            </div>
+        </div>
+    </main>
+    <footer class="footer-main">
+        <div class="datetime">
+            <p id="date-time"></p>
+        </div>
+        <div class="controls">
+            <div class="switch">
+                <form method="post" action="{% url 'front-camera' %}" id="face-recognition-form">
+                    {% csrf_token %}
+                    <input type="checkbox" id="face-recognition" name="face_recognition" 
+                           {% if face_recognition_enabled %}checked{% endif %}>
+                    <label for="face-recognition">Face Recognition</label>
+                </form>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal -->
+    <div id="admin-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>ADMIN OPTIONS</h2>
+            <div class="button-container">
+                <button class="admin-options" onclick="window.location.href='/supervisor-login';">SUPERVISOR</button>
+                <button class="admin-options" onclick="window.location.href='/admin-login';">ADMIN</button>
+                <button class="admin-options" onclick="window.location.href='/teacher-login';">TEACHER</button>
+                <button class="admin-options" onclick="window.location.href='/attendance-view';">ATTENDANCE</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Ensure the camera is stopped when navigating away from the page
+        window.addEventListener('pagehide', function() {
+            fetch('/stop_webcam/');
+        });
+        
+        // Keep track of already displayed student entries
+        let currentDisplayedEntries = new Set();
+        
+        // Polling function for recognized students - only runs when face recognition is enabled
+        function pollRecognizedStudents() {
+            // Always use time-in mode for the front camera
+            const mode = 'time-in';
+            
+            // Pass the mode to the API endpoint
+            fetch('/get_recognized_students/?mode=' + mode)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('attendance-container');
+                    
+                    // Check if we have data to display
+                    if (data.students && data.students.length > 0) {
+                        // Store IDs of new data to compare later
+                        const newEntryIds = new Set();
+                        
+                        // Create a new fragment to avoid multiple reflows
+                        const fragment = document.createDocumentFragment();
+                        
+                        // Process each student
+                        data.students.forEach(student => {
+                            // Create unique ID for this attendance record
+                            const entryId = student.entry_id;
+                            newEntryIds.add(entryId);
+                            
+                            // Create a new attendance box
+                            const studentBox = document.createElement('div');
+                            studentBox.className = 'attendance-box';
+                            studentBox.id = 'entry-' + entryId;
+                            
+                            // Add animation only if this is a new entry
+                            if (!currentDisplayedEntries.has(entryId)) {
+                                studentBox.classList.add('new-entry');
+                            }
+                            
+                            // Add the face image if available
+                            let faceImageHtml = '';
+                            if (student.face_image_url) {
+                                // Use the file-based image URL if available
+                                faceImageHtml = `
+                                    <div class="face-image-container">
+                                        <img src="${student.face_image_url}" 
+                                             alt="Captured face" class="captured-face">
+                                    </div>
+                                `;
+                            } else if (student.face_image_b64) {
+                                // Fall back to base64 if needed
+                                faceImageHtml = `
+                                    <div class="face-image-container">
+                                        <img src="data:image/jpeg;base64,${student.face_image_b64}" 
+                                             alt="Captured face" class="captured-face">
+                                    </div>
+                                `;
+                            }
+                            
+                            studentBox.innerHTML = `
+                                <div class="attendance-content">
+                                    <strong>${student.first_name} ${student.middle_initial} ${student.last_name}</strong>
+                                    <br>
+                                    LRN: ${student.lrn}
+                                    <br>
+                                    Grade ${student.section_grade} - ${student.section_name}
+                                    <br>
+                                    <small>Time In: ${student.attendance_time_in}</small>
+                                </div>
+                                ${faceImageHtml}
+                            `;
+                            
+                            // Add to fragment
+                            fragment.appendChild(studentBox);
+                        });
+                        
+                        // Clear container and append all boxes at once
+                        container.innerHTML = '';
+                        container.appendChild(fragment);
+                        
+                        // Update the set of currently displayed entries
+                        currentDisplayedEntries = newEntryIds;
+                    } else {
+                        // If no students, show the default message
+                        container.innerHTML = '<div class="attendance-box">No attendance marked yet.</div>';
+                        currentDisplayedEntries = new Set();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error polling for recognized students:', error);
+                });
+        }
+        
+        // Poll for updates only when face recognition is enabled
+        let pollInterval = null;
+        
+        function startPolling() {
+            if (!pollInterval) {
+                // Initial poll immediately
+                pollRecognizedStudents();
+                // Then poll every 2 seconds
+                pollInterval = setInterval(pollRecognizedStudents, 2000);
+                console.log("Polling started");
+            }
+        }
+        
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+                console.log("Polling stopped");
+            }
+        }
+        
+        // Check if face recognition is enabled and start/stop polling accordingly
+        document.addEventListener('DOMContentLoaded', function() {
+            // Always start polling on page load - regardless of checkbox state
+            startPolling();
+            console.log("Polling started on page load");
+            
+            // Listen for changes to the face recognition checkbox - but only toggle recognition, not polling
+            document.getElementById('face-recognition').addEventListener('change', function(e) {
+                // We don't toggle polling anymore, just log the state
+                if (this.checked) {
+                    console.log("Face recognition enabled");
+                } else {
+                    console.log("Face recognition disabled");
+                }
+            });
+        });
+
+        // Add this new event listener for the checkbox
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkbox = document.getElementById('face-recognition');
+            const webcamImage = document.querySelector('.webcam_feed');
+            const originalSrc = webcamImage.src;
+            
+            checkbox.addEventListener('change', function() {
+                // Create form data with the current checkbox state
+                const formData = new FormData(document.getElementById('face-recognition-form'));
+                
+                // If checkbox is checked, add the face_recognition field
+                if (this.checked) {
+                    formData.append('face_recognition', 'on');
+                }
+                
+                // Submit the form with fetch API
+                fetch('{% url "front-camera" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).then(response => {
+                    // No need to start/stop polling - only log state changes
+                    if (this.checked) {
+                        console.log("Face recognition enabled");
+                    } else {
+                        console.log("Face recognition disabled");
+                    }
+                    
+                    // Reload the webcam feed to apply the new setting
+                    webcamImage.src = originalSrc + '&t=' + new Date().getTime();
+                }).catch(error => {
+                    console.error('Error toggling face recognition:', error);
+                });
+            });
+            
+            // Initial state logging - don't toggle polling
+            console.log(checkbox.checked ? "Initial state: Face recognition enabled" : "Initial state: Face recognition disabled");
+        });
+    </script>
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

@@ -4,46 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Attendance Monitoring</title>
+    <title>{{ user_role|title }} - Attendance Monitoring</title>
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 </head>
 <body>
     <div class="dashboard">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="logo-container">
-                <img src="{% static 'images/logo white.png' %}" alt="Logo" class="logo">
-            </div>
-            <nav class="nav">
-                <ul>
-                    <li>
-                        <a href="/admin-dashboard">
-                            <i class="icon-home"></i> HOME
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin-teachers">
-                            <i class="icon-teachers"></i> TEACHERS
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin-students">
-                            <i class="icon-students"></i> STUDENTS
-                        </a>
-                    </li>
-                    <li class="active">
-                        <a href="/admin-attendance">
-                            <i class="icon-attendance"></i> ATTENDANCE
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin-settings">
-                            <i class="icon-settings"></i> SETTINGS
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </aside>
+        <!-- Include the dynamic sidebar -->
+        {% with active_page='attendance' %}
+        {% include 'components/sidebar.html' %}
+        {% endwith %}
 
         <!-- Main Content -->
         <main class="content">
@@ -51,7 +20,7 @@
                 <h1>ATTENDANCE MONITORING SYSTEM</h1>
                 <div class="user-section">
                     <img src="{% static 'images/user-default.png' %}" alt="Profile" class="profile-pic">
-                    <button class="logout-btn" type="button" onclick="window.location.href='{% url '/' %}'">Logout</button>
+                    <button class="logout-btn" type="button" onclick="window.location.href='{% url 'logout' %}'">Logout</button>
                 </div>
             </header>
 

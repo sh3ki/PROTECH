@@ -1,26 +1,34 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path
 from school import views
-from django.contrib.auth.views import LoginView,LogoutView
+from school.face_recognition import webcam_feed, stop_webcam, cleanup_old_images
 from django.conf import settings
 from django.conf.urls.static import static
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('',views.landing_page_view,name=''),
-    path('/',views.landing_page_view,name='/'),
-    path('school/', include('school.urls')),
-   
-    path('supervisor-login', views.supervisor_login_view),
+    path('admin/', admin.site.urls),  # Add trailing slash for Django admin
+    path('',views.device_selection_view, name='device-selection'),
+    path('front-camera/',views.front_camera_view, name='front-camera'),
+    path('back-camera/', views.back_camera_view, name='back-camera'),
+    path('logout', views.logout_view, name='logout'),
+    path('attendance-view',views.attendance_view, name='attendance-view'),
+    path('attendance-view-today',views.attendance_view_today, name='attendance-view-today'),
+    
+    # Authentication routes - all using consistent naming
+    path('supervisor-login', views.supervisor_login_view, name='supervisor-login'),
     path('admin-login', views.admin_login_view, name='admin-login'),
     path('teacher-login', views.teacher_login_view, name='teacher-login'),
     path('register-form', views.register_form_view, name='register-form'),
 
-    path('adminlogin', LoginView.as_view(template_name='school/adminlogin.html')),
-    path('studentlogin', LoginView.as_view(template_name='school/studentlogin.html')),
-    path('teacherlogin', LoginView.as_view(template_name='school/teacherlogin.html')),
+    # Face recognition routes
+    path('webcam_feed/', webcam_feed, name='webcam_feed'),
+    path('stop_webcam/', stop_webcam, name='stop_webcam'),
+    path('upload_temp_photo/', views.upload_temp_photo, name='upload_temp_photo'),
+    path('get_recognized_students/', views.get_recognized_students, name='get_recognized_students'),
+    path('cleanup_images/', views.cleanup_images_view, name='cleanup_images'),
     
+    # Supervisor routes
     path('supervisor-dashboard', views.supervisor_dashboard_view, name='supervisor-dashboard'),
     path('supervisor-schools', views.supervisor_schools_view, name='supervisor-schools'),
     path('add-school', views.add_school_view, name='add-school'),
@@ -34,22 +42,22 @@ urlpatterns = [
     path('delete-student/<int:lrn>/', views.delete_student_view, name='delete-student'),
     path('edit-school/<int:id>/', views.edit_school_view, name='edit-school'),
     path('delete-school/<int:id>/', views.delete_school_view, name='delete-school'),
-    # path('edit-admin/<int:id>/', views.edit_admin_view, name='edit-admin'),
-    # path('delete-admin/<int:id>/', views.delete_admin_view, name='delete-admin'),
-    # path('edit-teacher/<int:id>/', views.edit_teacher_view, name='edit-teacher'),
-    # path('delete-teacher/<int:id>/', views.delete_teacher_view, name='delete-teacher'),
     path('supervisor-attendance', views.supervisor_attendance_view, name='supervisor-attendance'),
     path('add-attendance/', views.add_attendance, name='add-attendance'),
     path('supervisor-settings', views.supervisor_settings_view, name='supervisor-settings'),
 
+    # Admin routes
     path('admin-dashboard', views.admin_dashboard_view, name='admin-dashboard'),
     path('admin-teachers', views.admin_teachers_view, name='admin-teachers'),
     path('admin-students', views.admin_students_view, name='admin-students'),
     path('admin-attendance', views.admin_attendance_view, name='admin-attendance'),
+    path('admin-settings', views.admin_settings_view, name='admin-settings'),
+    
+    # Teacher routes
     path('teacher-dashboard', views.teacher_dashboard_view, name='teacher-dashboard'),
+    path('teacher-students', views.teacher_students_view, name='teacher-students'),
+    path('teacher-attendance', views.teacher_attendance_view, name='teacher-attendance'),
+    path('teacher-settings', views.teacher_settings_view, name='teacher-settings'),
 
-    path('afterlogin', views.afterlogin_view,name='afterlogin'),
-    path('logout', LogoutView.as_view(template_name='system/landing_page.html'),name='logout'),
-
-
+    path('afterlogin', views.afterlogin_view, name='afterlogin'),
 ]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

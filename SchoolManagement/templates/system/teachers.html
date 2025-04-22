@@ -4,56 +4,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Supervisor - Manage Teachers</title>
+  <title>{{ user_role|title }} - Manage Teachers</title>
   <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 </head>
 <body>
   <div class="dashboard">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="logo-container">
-        <img src="{% static 'images/logo white.png' %}" alt="Logo" class="logo">
-      </div>
-      <nav class="nav">
-        <ul>
-          <li>
-            <a href="/supervisor-dashboard">
-              <i class="icon-home"></i> HOME
-            </a>
-          </li>
-          <li>
-            <a href="/supervisor-schools">
-              <i class="icon-schools"></i> SCHOOLS
-            </a>
-          </li>
-          <li>
-            <a href="/supervisor-admins">
-              <i class="icon-admins"></i> ADMINS
-            </a>
-          </li>
-          <li class="active">
-            <a href="/supervisor-teachers">
-              <i class="icon-teachers"></i> TEACHERS
-            </a>
-          </li>
-          <li>
-            <a href="/supervisor-students">
-              <i class="icon-students"></i> STUDENTS
-            </a>
-          </li>
-          <li>
-            <a href="/supervisor-attendance">
-              <i class="icon-attendance"></i> ATTENDANCE
-            </a>
-          </li>
-          <li>
-            <a href="/supervisor-settings">
-              <i class="icon-settings"></i> SETTINGS
-            </a>
-          </li>
-        </ul>
-      </nav>
-    </aside>
+    <!-- Include the dynamic sidebar -->
+    {% with active_page='teachers' %}
+    {% include 'components/sidebar.html' %}
+    {% endwith %}
 
     <!-- Main Content -->
     <main class="content">
@@ -61,7 +20,7 @@
         <h1>ATTENDANCE MONITORING SYSTEM</h1>
         <div class="user-section">
           <img src="{% static 'images/user-default.png' %}" alt="Profile" class="profile-pic">
-          <button class="logout-btn" type="button" onclick="window.location.href='{% url '/' %}'">Logout</button>
+          <button class="logout-btn" type="button" onclick="window.location.href='{% url 'logout' %}'">Logout</button>
         </div>
       </header>
 
@@ -261,6 +220,5 @@
   </script>
 
   <script src="{% static 'js/students.js' %}"></script>
-
 </body>
 </html>

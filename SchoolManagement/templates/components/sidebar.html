@@ -1,0 +1,65 @@
+{% load static %}
+
+<aside class="sidebar">
+  <div class="logo-container">
+    <img src="{% static 'images/logo white.png' %}" alt="Logo" class="logo">
+  </div>
+  <nav class="nav">
+    <ul>
+      <!-- Home - Available to all -->
+      <li class="{% if active_page == 'dashboard' %}active{% endif %}">
+        <a href="/{% if user.is_superuser %}supervisor{% elif user.is_principal or user.is_guard %}admin{% elif user.is_teacher %}teacher{% endif %}-dashboard">
+          <i class="icon-home"></i> HOME
+        </a>
+      </li>
+      
+      <!-- Schools - Only for supervisor -->
+      <!-- {% if user.is_superuser %}
+      <li class="{% if active_page == 'schools' %}active{% endif %}">
+        <a href="/supervisor-schools">
+          <i class="icon-schools"></i> SCHOOLS
+        </a>
+      </li>
+      {% endif %} -->
+      
+      <!-- Admins - Only for supervisor -->
+      {% if user.is_superuser %}
+      <li class="{% if active_page == 'admins' %}active{% endif %}">
+        <a href="/supervisor-admins">
+          <i class="icon-admins"></i> ADMINS
+        </a>
+      </li>
+      {% endif %}
+      
+      <!-- Teachers - For supervisor and admin -->
+      {% if user.is_superuser or user.is_principal or user.is_guard %}
+      <li class="{% if active_page == 'teachers' %}active{% endif %}">
+        <a href="/{% if user.is_superuser %}supervisor{% else %}admin{% endif %}-teachers">
+          <i class="icon-teachers"></i> TEACHERS
+        </a>
+      </li>
+      {% endif %}
+      
+      <!-- Students - For all roles -->
+      <li class="{% if active_page == 'students' %}active{% endif %}">
+        <a href="/{% if user.is_superuser %}supervisor{% elif user.is_principal or user.is_guard %}admin{% elif user.is_teacher %}teacher{% endif %}-students">
+          <i class="icon-students"></i> STUDENTS
+        </a>
+      </li>
+      
+      <!-- Attendance - For all roles -->
+      <li class="{% if active_page == 'attendance' %}active{% endif %}">
+        <a href="/{% if user.is_superuser %}supervisor{% elif user.is_principal or user.is_guard %}admin{% elif user.is_teacher %}teacher{% endif %}-attendance">
+          <i class="icon-attendance"></i> ATTENDANCE
+        </a>
+      </li>
+      
+      <!-- Settings - For all roles -->
+      <li class="{% if active_page == 'settings' %}active{% endif %}">
+        <a href="/{% if user.is_superuser %}supervisor{% elif user.is_principal or user.is_guard %}admin{% elif user.is_teacher %}teacher{% endif %}-settings">
+          <i class="icon-settings"></i> SETTINGS
+        </a>
+      </li>
+    </ul>
+  </nav>
+</aside>
