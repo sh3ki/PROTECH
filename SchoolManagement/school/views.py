@@ -921,8 +921,10 @@ def add_attendance(request):
     students = Student.objects.select_related('section').all()
     return render(request, "system/supervisor_attendance.html", {"students": students})
 
-def update_attendance_record(student_id, request, face_image_b64=None, image_path=None):
+def update_attendance_record(student_id, request, face_image_b64=None, face_image=None):
     """Updates attendance when a student is recognized"""
+    from .email_utils import send_attendance_notification
+    
     current_date = localtime().date() 
     current_time = localtime().time()
 
@@ -934,8 +936,10 @@ def update_attendance_record(student_id, request, face_image_b64=None, image_pat
         
         # Generate the unique entry ID
         entry_id = f"{student.lrn}-{current_date}"
-            
+        
         # Find or create attendance record for TODAY only
+        attendance_updated = False
+        
         if mode == 'time-in':
             # For time-in: Create a new record with time_in set
             attendance_record, created = Attendance.objects.get_or_create(
@@ -947,6 +951,9 @@ def update_attendance_record(student_id, request, face_image_b64=None, image_pat
             if not created and not attendance_record.time_in:
                 attendance_record.time_in = current_time
                 attendance_record.save()
+                attendance_updated = True
+            elif created:
+                attendance_updated = True
                 
         else:  # mode == 'time-out'
             # For time-out: Find existing record for today and update time_out
@@ -958,6 +965,7 @@ def update_attendance_record(student_id, request, face_image_b64=None, image_pat
                 if not attendance_record.time_out:
                     attendance_record.time_out = current_time
                     attendance_record.save()
+                    attendance_updated = True
             except Attendance.DoesNotExist:
                 # No attendance record for today yet - this is unusual for time-out
                 # but we'll create one with just time_out set
@@ -967,6 +975,25 @@ def update_attendance_record(student_id, request, face_image_b64=None, image_pat
                     time_in=None,  # No time_in
                     time_out=current_time  # Only time_out
                 )
+                attendance_updated = True
+
+        # Send email notification if the attendance was actually updated and student has guardian email
+        if attendance_updated and student.guardian_email:
+            # Use the correct time for the notification based on mode
+            notification_time = localtime().replace(
+                hour=current_time.hour, 
+                minute=current_time.minute,
+                second=current_time.second
+            )
+            
+            # Send the email notification in a new thread to avoid blocking
+            import threading
+            email_thread = threading.Thread(
+                target=send_attendance_notification,
+                args=(student, mode, notification_time)
+            )
+            email_thread.daemon = True
+            email_thread.start()
 
         # If we have a face image, store it for this session (for backward compatibility)
         if face_image_b64:
@@ -981,13 +1008,11 @@ def update_attendance_record(student_id, request, face_image_b64=None, image_pat
         attendance_time_out = attendance_record.time_out.strftime("%H:%M:%S") if attendance_record.time_out else None
 
         # Use the face image path if provided (new system)
-        if image_path and os.path.exists(image_path):
+        image_url = None
+        if face_image is not None and 'image_path' in locals():
             # Get the web-accessible URL for the image
             relative_path = os.path.relpath(image_path, settings.MEDIA_ROOT)
             image_url = f"/media/{relative_path}"
-        else:
-            # Fall back to base64 encoding if no file path or file doesn't exist
-            image_url = None
             
         return {
             "first_name": student.first_name,
@@ -1001,7 +1026,8 @@ def update_attendance_record(student_id, request, face_image_b64=None, image_pat
             "attendance_time_out": attendance_time_out,
             "record_date": str(current_date),
             "face_image_b64": face_image_storage.get(entry_id),  # For backward compatibility
-            "face_image_path": image_url,  # New field for file-based images
+            "face_image_url": image_url,  # New field for file-based images
+            "entry_id": entry_id
         }
 
     except Student.DoesNotExist:
@@ -1025,7 +1051,7 @@ def add_teacher_view(request):
         username = request.POST['username']
         password = request.POST['password']
         
-        # Get the school and section objects
+        # Get the school and section objects        
         try:
             school = School.objects.get(id=school_id)
             section = Section.objects.get(id=section_id)
@@ -1051,7 +1077,7 @@ def add_teacher_view(request):
                 return redirect('supervisor-teachers')
             else:
                 return redirect('admin-teachers')
-                
+
         except School.DoesNotExist:
             messages.error(request, "School not found.")
         except Section.DoesNotExist:
@@ -1084,7 +1110,7 @@ def back_camera_view(request):
     # Get current setting
     face_recognition_enabled = request.session.get('back_camera_face_recognition_enabled', False)
     
-    # Only load student face encodings if enabled
+    # Only load student face encodings if enabled        
     if face_recognition_enabled:
         from .face_recognition import load_student_face_encodings, student_names
         if len(student_names) == 0:
@@ -1167,4 +1193,3 @@ def attendance_view_today(request):
     }
     
     return render(request, 'system/attendance_view_today.html', context)
-

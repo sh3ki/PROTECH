@@ -25,6 +25,7 @@ urlpatterns = [
     path('webcam_feed/', webcam_feed, name='webcam_feed'),
     path('stop_webcam/', stop_webcam, name='stop_webcam'),
     path('upload_temp_photo/', views.upload_temp_photo, name='upload_temp_photo'),
+    path('school/upload-temp-photo/', views.upload_temp_photo, name='upload-temp-photo'),
     path('get_recognized_students/', views.get_recognized_students, name='get_recognized_students'),
     path('cleanup_images/', views.cleanup_images_view, name='cleanup_images'),
     

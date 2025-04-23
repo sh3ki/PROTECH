@@ -146,8 +146,19 @@ EMAIL_BACKEND ='django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'from@gmail.com' # this email will be used to send emails
-EMAIL_HOST_PASSWORD = 'xyz' # host email password required
+EMAIL_HOST_USER = 'simpostor012@gmail.com' # this email will be used to send emails
+EMAIL_HOST_PASSWORD = 'xnsj ferx sbmp nowt' # host email password required
+MAIL_SUBJECT_PREFIX = '[School Attendance] '  # Optional prefix for email subjects
+
+# Attendance notification settings
+ATTENDANCE_EMAIL_ENABLED = True  # Set to False to disable all attendance emails
+ATTENDANCE_NOTIFICATION_SENDER = 'School Attendance System <simpostor012@gmail.com>'
+
+# Note: If emails aren't sending correctly, verify:
+# 1. You're using an App Password if your Gmail has 2FA enabled
+# 2. Less secure apps access is enabled if not using 2FA
+# 3. The guardian_email field has valid data for the students
+
 # now sign in with your host gmail account in your browser
 # open following link and turn it ON
 # https://myaccount.google.com/lesssecureapps
