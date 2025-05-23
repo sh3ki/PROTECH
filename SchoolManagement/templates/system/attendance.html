@@ -75,7 +75,14 @@
                 </div>
 
                 <!-- Add Attendance Button -->
+                {% if user_role == 'teacher' or user_role == 'admin' %}
+                <div class="button-group">
+                    <button class="export-btn" onclick="exportAttendance()">Export CSV</button>
+                    <button class="add-btn" onclick="openModal()">Add</button>
+                </div>
+                {% else %}
                 <button class="add-btn" onclick="openModal()">Add</button>
+                {% endif %}
             </section>
 
             <!-- Add Attendance Modal -->
@@ -143,6 +150,14 @@
             closeModal();
             alert('Attendance added successfully!');
         });
+        
+        function exportAttendance() {
+            {% if user_role == 'admin' %}
+            window.location.href = "{% url 'export-admin-attendance' %}";
+            {% else %}
+            window.location.href = "{% url 'export-attendance' %}";
+            {% endif %}
+        }
     </script>
 </body>
 </html>

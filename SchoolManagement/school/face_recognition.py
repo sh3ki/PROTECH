@@ -19,21 +19,23 @@ from .models import Student, Attendance
 # Initialize logging
 logger = logging.getLogger(__name__)
 
-# Initialize webcam
-cap = None  # Will be initialized in thread
-frame_buffer = None  # Latest frame from camera
-frame_lock = threading.Lock()  # Thread safety for frame buffer
-is_capturing = False  # Flag to control the capture thread
-process_this_frame = 0  # Counter for frame processing (FPS control)
+# Initialize webcam - using dictionaries to support multiple cameras
+cameras = {}  # Dictionary to store camera objects keyed by index
+frame_buffers = {}  # Dictionary to store frames from different cameras
+capture_threads = {}  # Dictionary to store camera capture threads
+is_capturing = {}  # Dictionary to track which cameras are active
+process_this_frame = {}  # Counter for frame processing (FPS control) per camera
+should_flip_camera = {}  # Whether each camera should be flipped horizontally (default: true for front, false for back)
 
-# Track last detected faces for continuous display
-last_face_locations = []
-last_face_names = []
-last_face_times = {}  # To track how long to display a face after detection
+# Track last detected faces for continuous display - per camera
+last_face_locations = {}  # Camera index -> list of face locations
+last_face_names = {}  # Camera index -> list of face names
+last_face_times = {}  # Student name -> timestamp of last detection per camera
+
 FACE_DISPLAY_TIMEOUT = 1.0  # How long to keep showing a face after detection (seconds)
 
 # Face recognition settings
-FACE_RECOGNITION_THRESHOLD = 0.6  # Distance threshold
+FACE_RECOGNITION_THRESHOLD = 0.4  # Distance threshold
 FACE_IMAGES_PATH = 'media/student_face/'
 FACE_RECOGNITION_MODEL = 'hog'  # Use faster HOG model for video
 RESIZE_FACTOR = 0.20  # Resize factor for processing
@@ -94,65 +96,102 @@ def cleanup_old_images():
 
 def initialize_camera(camera_index=0):
     """Initialize the camera with specified index"""
-    global cap
-    cap = cv2.VideoCapture(camera_index)
-    if cap.isOpened():
+    global cameras
+    
+    # Release existing camera with this index if it exists
+    if camera_index in cameras and cameras[camera_index] is not None:
+        cameras[camera_index].release()
+    
+    # Initialize new camera
+    camera = cv2.VideoCapture(camera_index)
+    
+    if camera.isOpened():
         # Reduce buffer size to minimize latency
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        logger.info(f"Camera {camera_index} initialized successfully")
+        camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        cameras[camera_index] = camera
+        # Set flip behavior - front camera (0) flipped, back camera (1) not flipped
+        should_flip_camera[camera_index] = (camera_index == 0) 
+        logger.info(f"Camera {camera_index} initialized successfully (flip={should_flip_camera[camera_index]})")
+        return True
     else:
         logger.error(f"Failed to initialize camera {camera_index}")
+        cameras[camera_index] = None
+        return False
 
-def release_camera():
-    """Release the camera when the application exits"""
-    global cap, is_capturing
-    is_capturing = False
-    if cap and cap.isOpened():
-        cap.release()
-        logger.info("Camera released successfully")
+def release_camera(camera_index=None):
+    """Release the camera(s) when the application exits"""
+    global cameras, is_capturing
+    
+    if camera_index is not None:
+        # Release specific camera
+        if camera_index in cameras and cameras[camera_index] is not None:
+            is_capturing[camera_index] = False
+            cameras[camera_index].release()
+            cameras[camera_index] = None
+            logger.info(f"Camera {camera_index} released")
+    else:
+        # Release all cameras
+        for idx in list(cameras.keys()):
+            if cameras[idx] is not None:
+                is_capturing[idx] = False
+                cameras[idx].release()
+                cameras[idx] = None
+        logger.info("All cameras released")
 
 # Register the camera release function to run on exit
 atexit.register(release_camera)
 
-def capture_frames():
-    """Background thread to continuously capture frames"""
-    global frame_buffer, is_capturing, cap, last_error_time
+def capture_frames(camera_index):
+    """Background thread to continuously capture frames from a specific camera"""
+    global frame_buffers, is_capturing, cameras, last_error_time
     
-    logger.info("Frame capture thread started")
+    logger.info(f"Frame capture thread started for camera {camera_index}")
     
-    while is_capturing:
-        if cap is None or not cap.isOpened():
+    # Initialize processor counter for this camera
+    process_this_frame[camera_index] = 0
+    
+    # Initialize face tracking for this camera
+    last_face_locations[camera_index] = []
+    last_face_names[camera_index] = []
+    
+    while is_capturing.get(camera_index, False):
+        if camera_index not in cameras or cameras[camera_index] is None or not cameras[camera_index].isOpened():
             # Try to reinitialize camera if needed
             time.sleep(0.5)
             try:
-                initialize_camera()
+                initialize_camera(camera_index)
             except:
                 # Avoid spamming logs
                 current_time = time.time()
                 if current_time - last_error_time > ERROR_LOG_INTERVAL:
-                    logger.error("Camera not available")
+                    logger.error(f"Camera {camera_index} not available")
                     last_error_time = current_time
             continue
             
-        success, frame = cap.read()
+        success, frame = cameras[camera_index].read()
         if success:
-            # Flip horizontally for a mirror effect
-            frame = cv2.flip(frame, 1)
+            # Flip horizontally for mirror effect only for front camera (index 0)
+            if should_flip_camera.get(camera_index, False):
+                frame = cv2.flip(frame, 1)
             
-            # Thread-safe update of the current frame
-            with frame_lock:
-                frame_buffer = frame
+            # Thread-safe update of the frame buffer for this camera
+            frame_buffers[camera_index] = frame
         else:
             # Avoid spamming logs
             current_time = time.time()
             if current_time - last_error_time > ERROR_LOG_INTERVAL:
-                logger.error("Failed to read frame from camera")
+                logger.error(f"Failed to read frame from camera {camera_index}")
                 last_error_time = current_time
                 
         # Slight delay to prevent maxing out CPU
         time.sleep(0.01)
     
-    logger.info("Frame capture thread stopped")
+    # Clean up when thread stops
+    if camera_index in cameras and cameras[camera_index] is not None:
+        cameras[camera_index].release()
+        cameras[camera_index] = None
+    
+    logger.info(f"Frame capture thread stopped for camera {camera_index}")
 
 def load_student_face_encodings():
     """Load face encodings for all students from their images and create a BallTree"""
@@ -263,30 +302,41 @@ def find_closest_face(face_encoding):
 
 def generate_frame(face_recognition_enabled, request):
     """Generate video frames with optional face recognition"""
-    global process_this_frame, frame_buffer, last_face_locations, last_face_names, last_face_times
+    global process_this_frame, frame_buffers, last_face_locations, last_face_names, last_face_times
     
-    # Frame processing counter
-    process_this_frame = 0
+    # Get camera index from the request
+    camera_index = int(request.GET.get('camera', 0))
+    
+    # Get time-in/time-out mode from request
+    mode = request.GET.get('mode', 'time-in')
+    
+    # Initialize processing counter for this camera if needed
+    if camera_index not in process_this_frame:
+        process_this_frame[camera_index] = 0
+    
+    # Initialize face tracking lists for this camera if needed
+    if camera_index not in last_face_locations:
+        last_face_locations[camera_index] = []
+    if camera_index not in last_face_names:
+        last_face_names[camera_index] = []
     
     while True:
-        # Get the latest frame from the buffer
-        with frame_lock:
-            if frame_buffer is None:
-                # No frame available yet
-                time.sleep(0.01)
-                continue
-            
-            # Make a copy to avoid modifying the buffer
-            frame = frame_buffer.copy()
+        # Get the latest frame from the buffer for this camera
+        if camera_index not in frame_buffers or frame_buffers[camera_index] is None:
+            # No frame available yet
+            time.sleep(0.01)
+            continue
         
+        # Make a copy to avoid modifying the buffer
+        frame = frame_buffers[camera_index].copy()
         display_frame = frame.copy()  # Create a copy for drawing
         current_time = time.time()
         
         if face_recognition_enabled:
-            # Only process every 3rd frame to improve performance
-            process_this_frame = (process_this_frame + 1) % 5
+            # Only process every few frames to improve performance
+            process_this_frame[camera_index] = (process_this_frame[camera_index] + 1) % 5
             
-            if process_this_frame == 0 and len(student_encodings) > 0:
+            if process_this_frame[camera_index] == 0 and len(student_encodings) > 0:
                 # Resize frame for faster processing
                 small_frame = cv2.resize(frame, (0, 0), fx=RESIZE_FACTOR, fy=RESIZE_FACTOR)
                 rgb_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
@@ -313,7 +363,11 @@ def generate_frame(face_recognition_enabled, request):
                     # Save the face location and name for continuous display
                     current_face_locations.append((top, right, bottom, left))
                     current_face_names.append(name)
-                    last_face_times[name] = current_time
+                    
+                    # Update last seen time for this face
+                    if name not in last_face_times:
+                        last_face_times[name] = {}
+                    last_face_times[name][camera_index] = current_time
                     
                     # Record attendance for recognized faces with the current mode
                     if name != "Unknown":
@@ -327,15 +381,20 @@ def generate_frame(face_recognition_enabled, request):
                         # Pass face image along with student data
                         student_data = update_attendance_record(name, request, face_image_b64, face_image)
                 
-                # Update the face tracking lists
-                last_face_locations = current_face_locations
-                last_face_names = current_face_names
+                # Update the face tracking lists for this camera
+                last_face_locations[camera_index] = current_face_locations
+                last_face_names[camera_index] = current_face_names
             
             # Draw rectangles for all recent faces on every frame
             faces_to_remove = []
-            for i, ((top, right, bottom, left), name) in enumerate(zip(last_face_locations, last_face_names)):
+            for i, ((top, right, bottom, left), name) in enumerate(zip(
+                    last_face_locations[camera_index], 
+                    last_face_names[camera_index])):
+                
                 # Check if this face has timed out
-                if name in last_face_times and current_time - last_face_times[name] > FACE_DISPLAY_TIMEOUT:
+                if (name in last_face_times and 
+                    camera_index in last_face_times[name] and 
+                    current_time - last_face_times[name][camera_index] > FACE_DISPLAY_TIMEOUT):
                     faces_to_remove.append(i)
                     continue
                     
@@ -351,9 +410,9 @@ def generate_frame(face_recognition_enabled, request):
             
             # Remove any timed out faces (in reverse order to avoid index issues)
             for i in sorted(faces_to_remove, reverse=True):
-                if i < len(last_face_locations):
-                    del last_face_locations[i]
-                    del last_face_names[i]
+                if i < len(last_face_locations[camera_index]):
+                    del last_face_locations[camera_index][i]
+                    del last_face_names[camera_index][i]
 
         # Convert to JPEG for streaming (with lower quality for better performance)
         ret, jpeg = cv2.imencode('.jpg', display_frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
@@ -365,13 +424,19 @@ def generate_frame(face_recognition_enabled, request):
 
 def start_camera_thread(camera_index=0):
     """Start the background thread for camera capture"""
-    global is_capturing
+    global is_capturing, capture_threads
     
-    if not is_capturing:
-        is_capturing = True
+    # Check if this camera is already capturing
+    if camera_index not in is_capturing or not is_capturing[camera_index]:
+        # Set up camera
         initialize_camera(camera_index)
-        thread = threading.Thread(target=capture_frames, daemon=True)
+        
+        # Start capture thread for this camera
+        is_capturing[camera_index] = True
+        thread = threading.Thread(target=capture_frames, args=(camera_index,), daemon=True)
+        capture_threads[camera_index] = thread
         thread.start()
+        
         logger.info(f"Camera {camera_index} thread started")
         return True
     return False
@@ -383,15 +448,12 @@ def webcam_feed(request):
     
     # Check the appropriate session variable based on camera index
     if camera_index == 0:  # Front camera
-        face_recognition_enabled = request.session.get('face_recognition_enabled', False) # Changed default to False
+        face_recognition_enabled = request.session.get('face_recognition_enabled', False)
     else:  # Back camera
-        face_recognition_enabled = request.session.get('back_camera_face_recognition_enabled', False) # Changed default to False
+        face_recognition_enabled = request.session.get('back_camera_face_recognition_enabled', False)
     
     # Log the current state for debugging
     logger.info(f"Camera {camera_index} face recognition enabled: {face_recognition_enabled}")
-    
-    # Get time-in/time-out mode from request
-    mode = request.GET.get('mode', 'time-in')
     
     # Ensure camera is running in a separate thread
     start_camera_thread(camera_index)
@@ -403,15 +465,64 @@ def webcam_feed(request):
 
 def stop_webcam(request):
     """Stop the webcam feed"""
-    global is_capturing, cap
+    # Get camera index from request or default to 0
+    camera_index = int(request.GET.get('camera', 0))
     
-    is_capturing = False
-    if cap and cap.isOpened():
-        cap.release()
-        cap = None
-        logger.info("Camera released")
+    # Stop only the requested camera
+    release_camera(camera_index)
     
-    return JsonResponse({"status": "camera released"})
+    return JsonResponse({"status": f"Camera {camera_index} released"})
+
+def add_student_face_encoding(student_id):
+    """
+    Add a single student's face encoding to the existing encodings
+    without having to reload all encodings.
+    
+    Args:
+        student_id: The LRN or ID of the student to add
+    
+    Returns:
+        bool: True if successfully added, False otherwise
+    """
+    global student_encodings, student_encodings_array, student_ids_list, face_tree, student_names
+    
+    image_path = os.path.join(FACE_IMAGES_PATH, f"{student_id}.jpg")
+    
+    if not os.path.exists(image_path):
+        logger.error(f"Face image for student {student_id} does not exist at {image_path}")
+        return False
+    
+    try:
+        # Load and encode the image
+        student_image = face_recognition.load_image_file(image_path)
+        student_encoding = face_recognition.face_encodings(student_image)
+        
+        if not student_encoding:
+            logger.error(f"Could not find a face in the image for student {student_id}")
+            return False
+            
+        # Add to the dictionary
+        student_encodings[student_id] = student_encoding[0]
+        
+        # Add to the list of IDs
+        student_ids_list.append(student_id)
+        student_names.append(student_id)  # For backward compatibility
+        
+        # Add to the numpy array
+        if student_encodings_array is None or len(student_encodings_array) == 0:
+            student_encodings_array = np.array([student_encoding[0]])
+        else:
+            student_encodings_array = np.vstack((student_encodings_array, student_encoding[0]))
+        
+        # Rebuild the BallTree with the updated numpy array
+        if student_encodings_array is not None and len(student_encodings_array) > 0:
+            face_tree = BallTree(student_encodings_array, leaf_size=2)
+            
+        logger.info(f"Successfully added face encoding for student {student_id}")
+        return True
+    except Exception as e:
+        logger.error(f"Error adding face encoding for student {student_id}: {str(e)}")
+        return False
 
 # Initialize student encodings and BallTree when the module is imported
 ensure_directories_exist()

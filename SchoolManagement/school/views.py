@@ -4,6 +4,7 @@ import logging
 import os
 import shutil
 import uuid
+import csv
 from functools import wraps
 
 import cv2
@@ -25,7 +26,8 @@ from django.utils.timezone import localtime
 import base64
 
 from . import forms, models
-from .models import (Attendance, CustomUser, School, Section, Student)
+from .models import School, CustomUser, Student, Section, Attendance
+
 from .utils import generate_frames
 # Import face recognition functions from the new module
 from .face_recognition import (
@@ -565,9 +567,13 @@ def add_student_view(request):
         if os.path.exists(temp_path):
             os.makedirs(final_folder, exist_ok=True)
             shutil.move(temp_path, final_path)
-
-        # Reload face encodings after adding a new student
-        load_student_face_encodings()
+            
+            # Add just the new student's face encoding instead of reloading all encodings
+            from .face_recognition import add_student_face_encoding
+            add_student_face_encoding(student_lrn)
+        else:
+            # If no face image was provided, just log it
+            logger.warning(f"No face image provided for student {student_lrn}")
 
         messages.success(request, 'Student added successfully!')
         return redirect('supervisor-students')
@@ -810,6 +816,41 @@ def cleanup_images_view(request):
     # Redirect back to previous page or settings
     return redirect(request.META.get('HTTP_REFERER', 'admin-settings'))
 
+@login_required
+@admin_required
+def export_admin_attendance_csv(request):
+    """Export all attendance data as CSV file for administrators"""
+    # Admins can see all attendance records
+    attendances = Attendance.objects.all().select_related('student__section__school')
+    
+    # Create CSV response
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="all_attendance_{timezone.now().strftime("%Y-%m-%d")}.csv"'
+    
+    # Create CSV writer
+    writer = csv.writer(response)
+    
+    # Write header row
+    writer.writerow(['#', 'Student Name', 'LRN', 'School', 'Grade', 'Section', 'Date', 'Time In', 'Time Out', 'Status'])
+    
+    # Write data rows
+    for i, attendance in enumerate(attendances, 1):
+        student = attendance.student
+        writer.writerow([
+            i,
+            f"{student.first_name} {student.last_name}",
+            student.lrn,
+            student.section.school.name,
+            student.section.grade,
+            student.section.name,
+            attendance.date,
+            attendance.time_in if attendance.time_in else "N/A",
+            attendance.time_out if attendance.time_out else "N/A",
+            attendance.status if hasattr(attendance, 'status') else "N/A"  # Check if status field exists
+        ])
+    
+    return response
+
 #----------------------
 # TEACHER VIEWS
 #----------------------
@@ -872,6 +913,42 @@ def teacher_attendance_view(request):
 def teacher_settings_view(request):
     """Settings view for teachers"""
     return render(request, 'system/settings.html', {'user_role': 'teacher'})
+
+@login_required
+@teacher_required
+def export_attendance_csv(request):
+    """Export attendance data as CSV file for teachers"""
+    # Only allow teachers to export their section's attendance
+    teacher_section = request.user.section
+    attendances = Attendance.objects.filter(student__section=teacher_section).select_related('student__section__school')
+    
+    # Create CSV response
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="attendance_{timezone.now().strftime("%Y-%m-%d")}.csv"'
+    
+    # Create CSV writer
+    writer = csv.writer(response)
+    
+    # Write header row
+    writer.writerow(['#', 'Student Name', 'LRN', 'School', 'Grade', 'Section', 'Date', 'Time In', 'Time Out', 'Status'])
+    
+    # Write data rows
+    for i, attendance in enumerate(attendances, 1):
+        student = attendance.student
+        writer.writerow([
+            i,
+            f"{student.first_name} {student.last_name}",
+            student.lrn,
+            student.section.school.name,
+            student.section.grade,
+            student.section.name,
+            attendance.date,
+            attendance.time_in if attendance.time_in else "N/A",
+            attendance.time_out if attendance.time_out else "N/A",
+            attendance.status if hasattr(attendance, 'status') else "N/A"  # Check if status field exists
+        ])
+    
+    return response
 
 #----------------------
 # ATTENDANCE VIEWS

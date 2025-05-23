@@ -92,3 +92,11 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"Attendance for {self.student} on {self.date}"
+    
+class tITE(models.Model):
+    id = models.CharField(max_length=12, primary_key=True)
+    title = models.CharField(max_length=255)
+    description = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.id} {self.title} {self.description}"

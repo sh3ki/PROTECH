@@ -5,7 +5,6 @@ from school.face_recognition import webcam_feed, stop_webcam, cleanup_old_images
 from django.conf import settings
 from django.conf.urls.static import static
 
-
 urlpatterns = [
     path('admin/', admin.site.urls),  # Add trailing slash for Django admin
     path('',views.device_selection_view, name='device-selection'),
@@ -53,12 +52,14 @@ urlpatterns = [
     path('admin-students', views.admin_students_view, name='admin-students'),
     path('admin-attendance', views.admin_attendance_view, name='admin-attendance'),
     path('admin-settings', views.admin_settings_view, name='admin-settings'),
+    path('export-admin-attendance', views.export_admin_attendance_csv, name='export-admin-attendance'),
     
     # Teacher routes
     path('teacher-dashboard', views.teacher_dashboard_view, name='teacher-dashboard'),
     path('teacher-students', views.teacher_students_view, name='teacher-students'),
     path('teacher-attendance', views.teacher_attendance_view, name='teacher-attendance'),
     path('teacher-settings', views.teacher_settings_view, name='teacher-settings'),
+    path('export-attendance', views.export_attendance_csv, name='export-attendance'),
 
     path('afterlogin', views.afterlogin_view, name='afterlogin'),
 ]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
